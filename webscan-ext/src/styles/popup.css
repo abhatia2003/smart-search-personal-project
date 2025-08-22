@@ -1,0 +1,22 @@
+.popup-container {
+    font-family: sans-serif;
+    padding: 12px;
+    width: 250px;
+  }
+  
+  input {
+    width: 100%;
+    padding: 6px;
+    margin-top: 8px;
+  }
+  
+  button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 8px;
+    background: #0077ff;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
