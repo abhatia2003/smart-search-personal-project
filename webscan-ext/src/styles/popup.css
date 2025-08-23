@@ -2,6 +2,7 @@
   --rad: .7rem;
   --dur: .3s;
   --color-dark: #2f2f2f;
+  --color-darker: #202020;
   --color-light: #fff;
   --color-brand: #57bd84;
   --font-fam: 'Lato', sans-serif;
@@ -78,3 +79,43 @@ label {
   width: 1px;
   overflow: hidden;
 }
+
+/* Wrapper to keep form + results together */
+.popup-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 30rem; /* same as form */
+  }
+  
+  /* Results panel styling */
+  .results {
+    background: var(--color-darker);
+    border-radius: var(--rad);
+    padding: 0.6rem;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: var(--font-fam);
+    font-size: 1.4rem;
+    color: var(--color-light);
+  }
+  
+  .result-item {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+  }
+  
+  .result-item:last-child {
+    border-bottom: none;
+  }
+  
+  .result-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .no-results {
+    color: #aaa;
+    font-style: italic;
+    padding: 0.4rem;
+  }
