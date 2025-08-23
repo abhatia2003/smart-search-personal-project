@@ -1,19 +1,24 @@
-import { useState } from "react";
+import type { FormEvent } from "react";
 import "./../styles/popup.css";
 
 export default function App() {
-  const [query, setQuery] = useState("");
-
-  return (
-    <div className="popup-container">
-      <h1>🔍 Smart Search</h1>
-      <input
-        type="text"
-        placeholder="Search this page..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-      <button>Search</button>
-    </div>
-  );
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        console.log("Search submitted!");
+        // Access form values here if needed
+      };
+    
+      return (
+        <form onSubmit={handleSubmit} role="search">
+          <label htmlFor="search">Search for stuff</label>
+          <input
+            id="search"
+            type="search"
+            placeholder="Search..."
+            autoFocus
+            required
+          />
+          <button type="submit">Go</button>
+        </form>
+      );
 }
