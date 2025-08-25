@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Smart Search",
     "description": "Semantic search & highlight tool for any webpage.",
-    "version": "0.1.0",
+    "version": "0.4.0",
   
     "action": {
       "default_popup": "src/popup/index.html"
