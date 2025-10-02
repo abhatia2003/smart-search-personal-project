@@ -1,0 +1,6 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+faiss_index.bin
+stored_chunks.pkl
