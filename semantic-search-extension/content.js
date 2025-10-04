@@ -105,33 +105,114 @@ class WebPageTextExtractor {
     resultIndices.forEach((index, rank) => {
       const chunk = this.chunks[index];
       if (chunk && chunk.element) {
-        const highlight = document.createElement('div');
-        highlight.className = `semantic-search-highlight rank-${rank}`;
-        highlight.style.cssText = `
-          position: absolute;
-          background-color: rgba(255, 255, 0, ${0.7 - rank * 0.1});
-          border: 2px solid #ff6b35;
-          border-radius: 4px;
-          pointer-events: none;
-          z-index: 10000;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        `;
-        
-        // Position the highlight over the element
-        const pos = chunk.position;
-        highlight.style.top = `${pos.top}px`;
-        highlight.style.left = `${pos.left}px`;
-        highlight.style.width = `${pos.width}px`;
-        highlight.style.height = `${pos.height}px`;
-        
-        document.body.appendChild(highlight);
+        // Try to highlight the exact text inside the element using Range.
+        const found = this.highlightTextInElement(chunk.element, chunk.text, rank);
 
-        // Scroll to first result
-        if (rank === 0) {
-          chunk.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // If we couldn't find the exact snippet, fall back to overlaying the element bbox
+        if (!found) {
+          const highlight = document.createElement('div');
+          highlight.className = `semantic-search-highlight rank-${rank}`;
+          highlight.style.cssText = `
+            position: absolute;
+            background-color: rgba(255, 255, 0, ${0.7 - rank * 0.1});
+            border: 2px solid #ff6b35;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 10000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          `;
+
+          // Position the highlight over the element
+          const pos = chunk.position;
+          highlight.style.top = `${pos.top}px`;
+          highlight.style.left = `${pos.left}px`;
+          highlight.style.width = `${pos.width}px`;
+          highlight.style.height = `${pos.height}px`;
+
+          document.body.appendChild(highlight);
+
+          // Scroll to first result
+          if (rank === 0) {
+            chunk.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } else {
+          // scroll to the range's element if first result
+          if (rank === 0 && found.range) {
+            const container = found.range.startContainer.parentElement || chunk.element;
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
       }
     });
+  }
+
+  // Create a Range that covers the first occurrence of searchText inside rootElement's text nodes.
+  // If found, wrap the range with a span and return the range.
+  highlightTextInElement(rootElement, searchText, rank = 0) {
+    if (!searchText || !rootElement) return null;
+    const text = (rootElement.innerText || rootElement.textContent || '').replace(/\s+/g, ' ').trim();
+    const needle = searchText.replace(/\s+/g, ' ').trim();
+    if (!text || !needle) return null;
+
+    const idx = text.indexOf(needle);
+    if (idx === -1) return null;
+
+    // Walk text nodes to map global index to node/offset
+    const walker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT, null, false);
+    let currentNode;
+    let accumulated = 0;
+    let range = document.createRange();
+    while ((currentNode = walker.nextNode())) {
+      const nodeText = currentNode.nodeValue.replace(/\s+/g, ' ');
+      const len = nodeText.length;
+      if (accumulated + len >= idx) {
+        const startOffset = Math.max(0, idx - accumulated);
+        // find end node and offset
+        let remaining = needle.length;
+        let endNode = currentNode;
+        let endOffset = startOffset;
+        // consume current node
+        const available = len - startOffset;
+        if (available >= remaining) {
+          endOffset = startOffset + remaining;
+        } else {
+          remaining -= available;
+          // continue to next nodes
+          while (remaining > 0 && (endNode = walker.nextNode())) {
+            const nodeLen = endNode.nodeValue.replace(/\s+/g, ' ').length;
+            if (nodeLen >= remaining) {
+              endOffset = remaining;
+              remaining = 0;
+              break;
+            } else {
+              remaining -= nodeLen;
+            }
+          }
+        }
+
+        try {
+          range.setStart(currentNode, startOffset);
+          range.setEnd(endNode, endOffset);
+        } catch (e) {
+          return null;
+        }
+
+        // Wrap range with a span
+        const span = document.createElement('span');
+        span.className = `semantic-search-inline-highlight rank-${rank}`;
+        span.style.cssText = `background-color: rgba(255, 235, 59, ${0.6 - rank * 0.08}); border-radius: 2px; padding: 0;`;
+        try {
+          range.surroundContents(span);
+        } catch (e) {
+          // DOMException: The range splits non-text nodes; fallback to overlay
+          return null;
+        }
+
+        return { range };
+      }
+      accumulated += len;
+    }
+    return null;
   }
 
   // Clear all highlights

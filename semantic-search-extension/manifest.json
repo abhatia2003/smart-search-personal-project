@@ -5,6 +5,7 @@
   "description": "Search web pages using semantic similarity instead of exact keywords",
   "permissions": [
     "activeTab",
+    "tabs",
     "storage",
     "scripting"
   ],
