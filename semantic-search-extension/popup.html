@@ -1,18 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <style>
+    /* ---------- Base Layout ---------- */
     body {
       width: 350px;
-      min-height: 400px;
+      min-height: 420px;
       margin: 0;
-      padding: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      padding: 18px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(circle at top left, #0b0f0e 0%, #0f1413 40%, #0a0c0b 100%);
+      color: #e5e5e5;
     }
 
+    * {
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+
+    /* ---------- Header ---------- */
     .header {
       text-align: center;
       margin-bottom: 20px;
@@ -20,18 +27,22 @@
 
     .header h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
+      background: linear-gradient(90deg, #00ff9d, #00e6a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .header p {
-      margin: 5px 0 0 0;
+      margin-top: 6px;
       font-size: 12px;
-      opacity: 0.8;
+      color: rgba(255, 255, 255, 0.6);
     }
 
+    /* ---------- Search ---------- */
     .search-container {
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .search-box {
@@ -39,18 +50,39 @@
       padding: 12px;
       border: none;
       border-radius: 8px;
-      font-size: 14px;
-      background: rgba(255, 255, 255, 0.9);
-      color: #333;
-      box-sizing: border-box;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #e5e5e5;
+      box-shadow: inset 0 0 6px rgba(0, 255, 157, 0.05);
+    }
+
+    .search-box::placeholder {
+      color: rgba(255, 255, 255, 0.4);
     }
 
     .search-box:focus {
       outline: none;
-      background: white;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 255, 157, 0.3);
     }
 
+    /* ---------- Toggle ---------- */
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    input[type="checkbox"] {
+      accent-color: #00ff9d;
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ---------- Buttons ---------- */
     .buttons {
       display: flex;
       gap: 8px;
@@ -65,68 +97,45 @@
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      color: #fff;
     }
 
     .btn-primary {
-      background: #ff6b35;
-      color: white;
+      background: linear-gradient(90deg, #00ff9d, #00e6a0);
+      box-shadow: 0 0 10px rgba(0, 255, 157, 0.4);
     }
 
     .btn-primary:hover {
-      background: #e55a2b;
+      box-shadow: 0 0 14px rgba(0, 255, 157, 0.7);
       transform: translateY(-1px);
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none !important;
     }
 
+    /* ---------- Status ---------- */
     .status {
       text-align: center;
       font-size: 12px;
       margin-bottom: 15px;
-      padding: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-    }
-
-    .results {
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .result-item {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
       padding: 10px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      line-height: 1.4;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
     }
 
-    .result-score {
-      font-weight: 600;
-      color: #ff6b35;
-      margin-bottom: 4px;
-    }
-
-    .result-text {
-      color: rgba(255, 255, 255, 0.9);
-    }
-
+    /* ---------- Loading ---------- */
     .loading {
       display: none;
       text-align: center;
@@ -134,9 +143,9 @@
     }
 
     .spinner {
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      border: 2px solid rgba(0, 255, 157, 0.15);
       border-radius: 50%;
-      border-top: 2px solid white;
+      border-top: 2px solid #00ff9d;
       width: 20px;
       height: 20px;
       animation: spin 1s linear infinite;
@@ -148,17 +157,52 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* ---------- Results ---------- */
+    .results {
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 255, 157, 0.4) transparent;
+    }
+
+    .results::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .results::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 157, 0.4);
+      border-radius: 6px;
+    }
+
+    .result-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 255, 157, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .result-score {
+      font-weight: 600;
+      color: #00ff9d;
+      margin-bottom: 4px;
+    }
+
+    /* ---------- Shortcuts ---------- */
     .shortcuts {
-      margin-top: 20px;
+      margin-top: 22px;
       padding-top: 15px;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
       font-size: 11px;
-      opacity: 0.7;
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .shortcuts h4 {
       margin: 0 0 8px 0;
       font-size: 12px;
+      color: rgba(0, 255, 157, 0.8);
     }
 
     .shortcuts ul {
@@ -170,16 +214,27 @@
     .shortcuts li {
       margin-bottom: 4px;
     }
+
+    /* ---------- Subtle Glow Animation ---------- */
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(0, 255, 157, 0.4); }
+      50% { box-shadow: 0 0 12px rgba(0, 255, 157, 0.7); }
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🔍 Semantic Search</h1>
+    <h1>Semantic Search</h1>
     <p>Find content by meaning, not just keywords</p>
   </div>
 
   <div class="search-container">
     <input type="text" id="searchInput" class="search-box" placeholder="Search for concepts, ideas, or topics..." />
+  </div>
+
+  <div class="toggle">
+    <input type="checkbox" id="autoProcessToggle" />
+    <label for="autoProcessToggle">Auto-process this site on first visit</label>
   </div>
 
   <div class="buttons">
@@ -188,12 +243,12 @@
   </div>
 
   <div id="status" class="status">
-    Click "Search" to analyze the page and find similar content
+    Click “Search” to analyze the page and find similar content
   </div>
 
   <div id="loading" class="loading">
     <div class="spinner"></div>
-    <div>Processing page content...</div>
+    <div>Processing page content…</div>
   </div>
 
   <div id="results" class="results"></div>
@@ -202,7 +257,7 @@
     <h4>Tips:</h4>
     <ul>
       <li>• Search by concepts, not keywords</li>
-      <li>• Try "machine learning" or "data analysis"</li>
+      <li>• Try “machine learning” or “data analysis”</li>
       <li>• Results are ranked by semantic similarity</li>
     </ul>
   </div>

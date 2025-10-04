@@ -113,7 +113,122 @@ class SemanticSearchEngine {
 // Initialize the search engine
 const searchEngine = new SemanticSearchEngine();
 
-// Handle messages from popup and content scripts
+// Backend URL used by the extension to store page embeddings
+const BACKEND_URL = 'http://localhost:8000';
+
+// Track which tabs have already been processed for a given URL
+const processedByTab = new Map(); // tabId -> url
+
+async function sendChunksToBackend(chunks, source) {
+  if (!Array.isArray(chunks) || chunks.length === 0) {
+    console.warn('[Semantic Search] No chunks to send to backend');
+    return null;
+  }
+
+  // Check backend availability first
+  const avail = await backendAvailable();
+  if (!avail) {
+    console.warn('[Semantic Search] Backend unavailable - skipping remote embed');
+    return null;
+  }
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/embed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chunks, source })
+    });
+    const json = await resp.json();
+    console.log('[Semantic Search] Backend embed response', json);
+    return json;
+  } catch (err) {
+    // Do not throw - log and return null so callers can fallback
+    console.warn('[Semantic Search] Failed to send chunks to backend:', err);
+    return null;
+  }
+}
+
+async function clearBackend() {
+  // Only attempt to clear if backend is available
+  const avail = await backendAvailable();
+  if (!avail) return;
+  try {
+    await fetch(`${BACKEND_URL}/clear`, { method: 'POST' });
+    console.log('[Semantic Search] Backend cleared');
+  } catch (err) {
+    console.warn('[Semantic Search] Failed to clear backend:', err);
+  }
+}
+
+// Ping backend /status with short timeout to check availability
+async function backendAvailable(timeoutMs = 500) {
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    const resp = await fetch(`${BACKEND_URL}/status`, { signal: controller.signal });
+    clearTimeout(id);
+    return resp.ok;
+  } catch (err) {
+    return false;
+  }
+}
+
+// Process a tab: clear backend then extract & embed the page content.
+async function processTab(tabId, tabUrl) {
+  try {
+    // Avoid reprocessing same URL for same tab
+    const prev = processedByTab.get(tabId);
+    if (prev && prev === tabUrl) {
+      return;
+    }
+
+    // Respect per-site auto-process setting stored in chrome.storage.local
+    try {
+      const u = new URL(tabUrl);
+      const key = `autoProcess_${u.hostname}`;
+      chrome.storage.local.get([key], async (items) => {
+        const val = items[key];
+        // If explicitly disabled, skip processing
+        if (val === false) {
+          console.log('[Semantic Search] Auto-process disabled for this site:', u.hostname);
+          return;
+        }
+
+        // Clear backend to ensure only this page's content is stored
+        await clearBackend();
+
+        // Clear local embeddings for all other tabs to free memory and avoid stale results
+        for (const [otherTabId] of searchEngine.pageEmbeddings) {
+          if (otherTabId !== tabId) {
+            searchEngine.pageEmbeddings.delete(otherTabId);
+          }
+        }
+
+        // Ask content script to extract chunks
+        chrome.tabs.sendMessage(tabId, { action: 'extractText' }, async (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn('[Semantic Search] Could not extract from tab', tabId, chrome.runtime.lastError.message);
+            return;
+          }
+
+          if (response && response.chunks && response.chunks.length > 0) {
+            await sendChunksToBackend(response.chunks, tabUrl);
+            processedByTab.set(tabId, tabUrl);
+          } else {
+            console.log('[Semantic Search] No chunks found for tab', tabId);
+          }
+        });
+      });
+      return;
+    } catch (e) {
+      console.warn('[Semantic Search] processTab storage check failed, proceeding with default processing', e);
+    }
+  } catch (err) {
+    console.error('[Semantic Search] processTab error', err);
+  }
+}
+
+// Handle messages from popup and content scripts (local search engine still available)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const tabId = sender.tab?.id;
 
@@ -135,9 +250,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Clean up embeddings when tabs are closed
-chrome.tabs.onRemoved.addListener((tabId) => {
-  searchEngine.pageEmbeddings.delete(tabId);
+// Auto-process pages when they finish loading or are activated
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+    processTab(tabId, tab.url);
+  }
 });
 
-console.log('[Semantic Search] Background script loaded');
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    if (tab && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+      processTab(tab.id, tab.url);
+    }
+  } catch (err) {
+    console.error('[Semantic Search] onActivated error', err);
+  }
+});
+
+// When tab is removed or navigated away, clear backend and forget processed state for that tab
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  processedByTab.delete(tabId);
+  // Remove local embeddings for this tab
+  searchEngine.pageEmbeddings.delete(tabId);
+  // Clear backend so next page has empty DB
+  clearBackend();
+});
+
+// Also clear when a tab's URL changes (navigation) so DB always reflects current page only
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    processedByTab.delete(tabId);
+    // Remove local embeddings for this tab; navigation means old content no longer valid
+    searchEngine.pageEmbeddings.delete(tabId);
+    clearBackend();
+  }
+});
+
+console.log('[Semantic Search] Background script loaded (auto-processing enabled)');

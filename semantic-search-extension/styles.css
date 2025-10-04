@@ -53,3 +53,17 @@
 .semantic-search-highlight:hover {
   opacity: 0.5;
 }
+
+/* Inline highlight used when exact text match is found */
+.semantic-search-inline-highlight {
+  background-color: rgba(255, 235, 59, 0.6);
+  border-radius: 2px;
+  padding: 0 2px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08) inset;
+}
+
+.semantic-search-inline-highlight.rank-0 { background-color: rgba(255, 193, 7, 0.7); }
+.semantic-search-inline-highlight.rank-1 { background-color: rgba(255, 235, 59, 0.6); }
+.semantic-search-inline-highlight.rank-2 { background-color: rgba(144, 238, 144, 0.6); }
+.semantic-search-inline-highlight.rank-3 { background-color: rgba(173, 216, 230, 0.6); }
+.semantic-search-inline-highlight.rank-4 { background-color: rgba(211, 211, 211, 0.5); }
