@@ -11,8 +11,10 @@
   _MVP overlay, extract & segment content from webpages/PDFs._
 - [x] **Phase 2 — RAG foundations & docs.**  (See [branch-youtube-tutorial](https://github.com/abhatia2003/smart-search-personal-project/tree/branch-youtube-tutorial))
   _Studied the retrieval-augmented generation pipeline; wrote internal notes to guide implementation._
-- [ ] **Phase 3 — Integrate RAG into the extension (in progress).**  
+- [x] **Phase 3 — Integrate RAG into the extension.**  
   _Wire retrieval & ranking into Smart mode; add citations, snippets, and result scoring._
+- [ ] **Phase 4 - Testing and Bug Fixing**
+  _Fix known issues and enhance UI UX for Users to be able to easily optimize their experience._
 
 ---
 
